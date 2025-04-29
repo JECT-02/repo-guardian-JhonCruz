@@ -1,0 +1,15 @@
+venv/
+.env
+*.env
+
+__pycache__/
+*.py[cod]
+*.pyo
+
+*.log
+*.tmp
+
+*.svg
+*.pdf
+*.png
+*.jpg

@@ -1,0 +1,19 @@
+@startuml
+left to right direction
+actor Usuario
+rectangle "Repo-Guardian CLI/TUI" {
+    component "Object Scanner" as scanner
+    component "DAG Builder" as dag
+}
+database "Repositorio Git" {
+    folder ".git/objects"
+}
+cloud "GitHub API" {
+    rectangle "Releases"
+}
+
+Usuario --> scanner : "scan / repair"
+scanner --> ".git/objects" : "lee/valida"
+dag --> ".git/objects" : "reconstruye historial"
+dag --> "Releases" : "exporta graphml"
+@enduml

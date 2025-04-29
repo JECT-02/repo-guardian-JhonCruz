@@ -1,0 +1,18 @@
+[project]
+name = "repo-guardian"
+version = "0.1.0"
+description = "CLI/TUI tool to audit and repair Git repositories"
+authors = [{name = "Tu Nombre", email = "tu@email.com"}]
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["setuptools>=65.0.0"]
+build-backend = "setuptools.build_meta"
+
+# Configuración mínima para pytest (solo pruebas básicas)
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+addopts = "--verbose"
