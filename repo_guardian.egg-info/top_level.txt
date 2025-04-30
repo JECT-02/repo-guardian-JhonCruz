@@ -1,0 +1,7 @@
+docs
+features
+fixtures
+scripts
+src
+tests
+venv
