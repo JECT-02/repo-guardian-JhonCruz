@@ -1,21 +1,26 @@
-[project]
-name = "repo-guardian"
-version = "0.1.0"
-description = "CLI/TUI tool to audit and repair Git repositories"
-authors = [{name = "Tu Nombre", email = "tu@email.com"}]
-readme = "README.md"
-requires-python = ">=3.11"
-license = {text = "MIT"}
-
 [build-system]
 requires = ["setuptools>=65.0.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.pytest.ini_options]
-pythonpath = ["src"]  # ¡Esta línea es crucial!
-testpaths = ["tests"]
-python_files = "test_*.py"
-addopts = "--verbose --cov=src --cov-report=term-missing"
+[project]
+name = "repo-guardian"
+version = "0.1.0"
+description = "CLI/TUI tool to audit and repair Git repositories"
+authors = [{ name = "Tu Nombre", email = "tu@email.com" }]
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
 
-[tool.setuptools.packages]
-find = {}  # Habilita búsqueda automática de paquetes
+[project.scripts]
+guardian = "guardian.cli:main"
+
+[tool.ruff]
+lint.select = ["E", "F", "W", "I", "B"]
+lint.ignore = []
+lint.fixable = ["ALL"]
+format.quote-style = "double"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "--cov=src --verbose"

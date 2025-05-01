@@ -1,17 +1,15 @@
 #!/bin/bash
 
 # Script para simular GitHub Actions localmente
-# Ubicación: repo-guardian-JhonCruz/run-ci-local.sh
-
-echo "Instalando dependencias..."
+echo "Configurando entorno..."
+python -m pip install --upgrade pip
 pip install -r requirements.txt
-pip install pytest pytest-cov ruff
 
-echo "Ejecutando linter (Ruff)..."
+echo "Ejecutando linter..."
 ruff check src/ tests/
 
 echo "Ejecutando pruebas..."
-pytest tests/ --verbose --cov=src --cov-report=term-missing
+pytest tests/ --cov=src --cov-report=term-missing
 
 echo "Verificando cobertura..."
 coverage report --fail-under=80

@@ -9,6 +9,7 @@ src/guardian/utils.py
 src/repo_guardian.egg-info/PKG-INFO
 src/repo_guardian.egg-info/SOURCES.txt
 src/repo_guardian.egg-info/dependency_links.txt
+src/repo_guardian.egg-info/entry_points.txt
 src/repo_guardian.egg-info/top_level.txt
 tests/test_dag_builder.py
 tests/test_dummy.py
