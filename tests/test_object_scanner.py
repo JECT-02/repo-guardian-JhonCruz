@@ -3,7 +3,6 @@ import zlib
 from pathlib import Path
 
 import pytest
-
 from guardian.object_scanner import read_loose
 
 
@@ -57,25 +56,25 @@ def test_read_loose_size_mismatch(valid_blob_path):
     """Prueba detección de discrepancia en tamaño."""
     with open(valid_blob_path, "rb") as f:
         decompressed = zlib.decompress(f.read())
-    
+
     header, _, body = decompressed.partition(b"\x00")
-    
+
     # Modificar solo el tamaño declarado manteniendo el mismo contenido real
     corrupted_header = header.replace(
-        f"blob {len(body)}".encode(), 
+        f"blob {len(body)}".encode(),
         f"blob {len(body)+1}".encode()
     )
     corrupted_data = corrupted_header + b"\x00" + body
-    
+
     # Calcular el nuevo SHA-1
     new_sha = hashlib.sha1(corrupted_data).hexdigest()
-    
+
     # Crear el directorio basado en los primeros dos caracteres del nuevo SHA-1
     obj_dir = valid_blob_path.parent.parent / new_sha[:2]
     obj_dir.mkdir(parents=True, exist_ok=True)
     corrupted_path = obj_dir / new_sha[2:]
     corrupted_path.write_bytes(zlib.compress(corrupted_data))
-    
+
     with pytest.raises(ValueError, match="Size mismatch"):
         read_loose(corrupted_path)
 
