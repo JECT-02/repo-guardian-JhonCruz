@@ -12,7 +12,7 @@ requires-python = ">=3.11"
 license = { text = "MIT" }
 
 [project.scripts]
-guardian = "guardian.cli:cli"
+guardian = "guardian.cli:main"
 
 [tool.ruff]
 lint.select = ["E", "F", "W", "I", "B"]
@@ -24,3 +24,6 @@ format.quote-style = "double"
 pythonpath = ["src"]
 testpaths = ["tests"]
 addopts = "--cov=src --verbose"
+
+[tool.mypy]
+ignore_missing_imports = true
