@@ -11,28 +11,51 @@ def cli():
     """Repo-Guardian: Herramienta para auditar repositorios Git"""
     pass
 
+
 @cli.command()
-@click.argument("repo_path")
-def scan(repo_path):
+@click.argument("repo_path", type=click.Path(exists=True, path_type=Path))
+def scan(repo_path: Path):
     """Escanea un repositorio Git en busca de objetos corruptos."""
-    repo_path = Path(repo_path)
+    try:
+        git_dir = _get_git_dir(repo_path)
+        error_count = _scan_repository(git_dir)
+
+        if error_count > 0:
+            click.echo(f"\nSe encontraron {error_count} errores", err=True)
+            sys.exit(2)
+
+        click.echo("✅ No se encontraron errores en los objetos Git")
+        sys.exit(0)
+
+    except click.BadParameter as e:
+        click.echo(f"Error: {str(e)}", err=True)
+        sys.exit(1)
+
+
+def _get_git_dir(repo_path: Path) -> Path:
+    """Obtiene la ruta del directorio .git válido."""
     git_dir = repo_path / ".git" if (repo_path / ".git").exists() else repo_path
 
     if not git_dir.exists():
-        click.echo(f"Error: El directorio {git_dir} no existe", err=True)
-        return 1
+        raise click.BadParameter(f"El directorio {git_dir} no existe")
 
     objects_dir = git_dir / "objects"
     if not objects_dir.exists():
-        click.echo(f"Error: No se encontraron objetos en {git_dir}", err=True)
-        return 1
+        raise click.BadParameter(f"No se encontraron objetos en {git_dir}")
 
+    return git_dir
+
+
+def _scan_repository(git_dir: Path) -> int:
+    """Realiza el escaneo de objetos Git."""
     error_count = 0
+    objects_dir = git_dir / "objects"
 
     # Escanear objetos sueltos
     for obj_file in objects_dir.glob("??/*"):
         try:
             read_loose(obj_file)
+            click.echo(f"✓ {obj_file} es válido", err=True)
         except ValueError as e:
             click.echo(f"✗ Error en {obj_file}: {str(e)}", err=True)
             error_count += 1
@@ -43,16 +66,17 @@ def scan(repo_path):
         for pack_file in pack_dir.glob("*.pack"):
             try:
                 read_packfile(pack_file)
+                click.echo(f"✓ {pack_file} es válido", err=True)
             except ValueError as e:
                 click.echo(f"✗ Error en {pack_file}: {str(e)}", err=True)
                 error_count += 1
 
-    if error_count > 0:
-        click.echo(f"\nSe encontraron {error_count} errores", err=True)
-        sys.exit(2)  # Salir explícitamente con código 2
+    return error_count
 
-    click.echo("No se encontraron errores en los objetos Git")
-    return 0
+
+def main():
+    cli()
+
 
 if __name__ == "__main__":
-    cli()
+    main()
