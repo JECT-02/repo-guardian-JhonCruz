@@ -1,19 +1,9 @@
-@startuml
-left to right direction
-actor Usuario
-rectangle "Repo-Guardian CLI/TUI" {
-    component "Object Scanner" as scanner
-    component "DAG Builder" as dag
-}
-database "Repositorio Git" {
-    folder ".git/objects"
-}
-cloud "GitHub API" {
-    rectangle "Releases"
-}
-
-Usuario --> scanner : "scan / repair"
-scanner --> ".git/objects" : "lee/valida"
-dag --> ".git/objects" : "reconstruye historial"
-dag --> "Releases" : "exporta graphml"
-@enduml
+%% docs/dag.mmd  
+gitGraph  
+  commit id: "a1b2c" type: NORMAL  
+  commit id: "d3e4f" type: NORMAL  
+  branch feature  
+  commit id: "g5h6i" type: NORMAL  
+  checkout main  
+  commit id: "j7k8l" type: NORMAL  
+  merge feature id: "m9n0o"  

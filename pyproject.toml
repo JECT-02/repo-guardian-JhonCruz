@@ -12,7 +12,7 @@ requires-python = ">=3.11"
 license = { text = "MIT" }
 
 [project.scripts]
-guardian = "guardian.cli:main"
+guardian = "guardian.cli:cli"
 
 [tool.ruff]
 lint.select = ["E", "F", "W", "I", "B"]
