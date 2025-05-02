@@ -36,7 +36,9 @@ def test_build_dag_empty():
 def test_build_dag_structure(sample_commits):
     """Prueba que el DAG retorna un grafo (placeholder para D-4)."""
     dag = build_dag(sample_commits)
-    assert isinstance(dag, DiGraph)  # Placeholder: retorna grafo vacío
+    assert isinstance(dag, DiGraph)
+    assert list(dag.nodes) == []  # Asegura que está vacío (placeholder)
+    assert list(dag.edges) == []  # Asegura no hay relaciones
 
 
 def test_build_dag_invalid_objects():

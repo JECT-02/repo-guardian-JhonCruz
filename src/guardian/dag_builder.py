@@ -9,9 +9,13 @@ def build_dag(commits: List[GitObject]) -> DiGraph:
     """Construye un DAG a partir de objetos Git commit válidos.
 
     Args:
-        commits: Lista de objetos Git con tipo 'commit'.
+        commits: Lista de objetos Git con tipo 'commit' y datos parseados.
 
     Returns:
-        Grafo dirigido acíclico (DAG) con relaciones padre-hijo.
+        Grafo dirigido acíclico (DAG) con:
+        - Nodos: SHAs de commits
+        - Aristas: Relaciones padre-hijo
     """
-    return DiGraph()  # Placeholder para D-4 (tests pasarán)
+    dag = DiGraph()
+    # Placeholder para D-4 (añadir lógica de parsing real)
+    return dag
