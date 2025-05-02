@@ -19,3 +19,5 @@ curses-menu==0.9.0  # Versión actualizada
 
 mypy==1.10.0
 types-PyYAML==6.0.12.12
+
+pytest-mock==3.14.0
