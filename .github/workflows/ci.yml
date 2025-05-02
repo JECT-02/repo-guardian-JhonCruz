@@ -15,13 +15,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run linter (Ruff)
-        run: ruff check src/ tests/
+        run: |
+          ruff check src/ tests/ --fix
+          ruff check src/ tests/ --exit-non-zero-on-fix
+      - name: Run type checker (mypy)
+        run: mypy src/
       - name: Run tests with coverage
         run: |
           pytest tests/ \
             --verbose \
             --cov=src \
-            --cov-report=xml
+            --cov-report=xml \
+            --cov-report=term
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         if: success()

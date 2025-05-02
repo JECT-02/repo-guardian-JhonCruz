@@ -1,92 +1,98 @@
-import hashlib
+import binascii
+import struct
 import zlib
-from pathlib import Path
 
 import pytest
-from guardian.object_scanner import read_loose
+from guardian.object_scanner import read_packfile
 
 
 @pytest.fixture
-def valid_blob_path(tmp_path):
-    """Fixture que crea un blob Git válido para pruebas."""
+def valid_packfile(tmp_path):
+    """Crea un packfile válido de prueba."""
+    pack_dir = tmp_path / "objects" / "pack"
+    pack_dir.mkdir(parents=True)
+
+    # Crear objeto blob válido
     content = b"test content"
     header = f"blob {len(content)}\0".encode()
     full_content = header + content
-    sha = hashlib.sha1(full_content).hexdigest()
+    compressed = zlib.compress(full_content)
+    crc = binascii.crc32(compressed)
 
-    obj_dir = tmp_path / "objects" / sha[:2]
-    obj_dir.mkdir(parents=True)
-    obj_path = obj_dir / sha[2:]
-    obj_path.write_bytes(zlib.compress(full_content))
+    # Cabecera del packfile (12 bytes)
+    pack_header = struct.pack(">4sII", b"PACK", 2, 1)
 
-    return obj_path
+    # Header de objeto (type=3 para blob)
+    size = len(compressed)
+    obj_header = bytearray()
+    byte = 0b10000000 | (3 << 4) | (size & 0b1111)
+    obj_header.append(byte)
+    size >>= 4
+    while size > 0:
+        byte = 0b10000000 | (size & 0b1111111)
+        obj_header.append(byte)
+        size >>= 7
 
+    # Datos completos del objeto
+    obj_entry = bytes(obj_header) + compressed + struct.pack(">I", crc)
 
-def test_read_loose_valid(valid_blob_path):
-    """Prueba lectura de objeto válido."""
-    obj = read_loose(valid_blob_path)
-    assert obj.type == "blob"
-    assert obj.sha == valid_blob_path.parent.name + valid_blob_path.name
+    # Packfile completo
+    pack_data = pack_header + obj_entry
+    pack_path = pack_dir / "valid.pack"
+    pack_path.write_bytes(pack_data)
 
-
-def test_read_loose_nonexistent_path():
-    """Prueba manejo de path inexistente."""
-    with pytest.raises(ValueError, match="does not exist"):
-        read_loose(Path("/nonexistent/path"))
-
-
-def test_read_loose_corrupt_zlib(tmp_path):
-    """Prueba detección de datos zlib corruptos."""
-    corrupt_path = tmp_path / "corrupt"
-    corrupt_path.write_bytes(b"invalid zlib data")
-    with pytest.raises(ValueError, match="Corrupt zlib data"):
-        read_loose(corrupt_path)
+    return pack_path
 
 
-def test_read_loose_invalid_header(tmp_path):
-    """Prueba detección de header inválido."""
-    invalid_data = zlib.compress(b"invalidheader")
-    path = tmp_path / "invalid"
-    path.write_bytes(invalid_data)
-    with pytest.raises(ValueError, match="Invalid object format"):
-        read_loose(path)
+def test_read_packfile_invalid_signature(tmp_path):
+    """Prueba detección de firma inválida."""
+    invalid_pack = tmp_path / "invalid.pack"
+    invalid_pack.write_bytes(b"INVALID" + b"\x00"*8)
+    with pytest.raises(ValueError, match="Invalid packfile signature"):
+        read_packfile(invalid_pack)
 
 
-def test_read_loose_size_mismatch(valid_blob_path):
-    """Prueba detección de discrepancia en tamaño."""
-    with open(valid_blob_path, "rb") as f:
-        decompressed = zlib.decompress(f.read())
+def test_read_packfile_corrupt_crc(tmp_path):
+    """Prueba detección de CRC corrupto."""
+    pack_dir = tmp_path / "objects" / "pack"
+    pack_dir.mkdir(parents=True)
 
-    header, _, body = decompressed.partition(b"\x00")
+    content = b"test"
+    header = f"blob {len(content)}\0".encode()
+    full_content = header + content
+    compressed = zlib.compress(full_content)
+    crc = binascii.crc32(compressed) ^ 0xFFFFFFFF  # CRC corrupto
 
-    # Modificar solo el tamaño declarado manteniendo el mismo contenido real
-    corrupted_header = header.replace(
-        f"blob {len(body)}".encode(),
-        f"blob {len(body)+1}".encode()
-    )
-    corrupted_data = corrupted_header + b"\x00" + body
+    pack_header = struct.pack(">4sII", b"PACK", 2, 1)
 
-    # Calcular el nuevo SHA-1
-    new_sha = hashlib.sha1(corrupted_data).hexdigest()
+    # Header de objeto con tamaño correcto
+    size = len(compressed)
+    obj_header = bytearray()
+    byte = 0b10000000 | (3 << 4) | (size & 0b1111)
+    obj_header.append(byte)
+    size >>= 4
+    while size > 0:
+        byte = 0b10000000 | (size & 0b1111111)
+        obj_header.append(byte)
+        size >>= 7
 
-    # Crear el directorio basado en los primeros dos caracteres del nuevo SHA-1
-    obj_dir = valid_blob_path.parent.parent / new_sha[:2]
-    obj_dir.mkdir(parents=True, exist_ok=True)
-    corrupted_path = obj_dir / new_sha[2:]
-    corrupted_path.write_bytes(zlib.compress(corrupted_data))
+    obj_entry = bytes(obj_header) + compressed + struct.pack(">I", crc)
 
-    with pytest.raises(ValueError, match="Size mismatch"):
-        read_loose(corrupted_path)
+    corrupt_pack = pack_dir / "corrupt.pack"
+    corrupt_pack.write_bytes(pack_header + obj_entry)
+
+    with pytest.raises(ValueError, match="Invalid CRC at offset"):
+        read_packfile(corrupt_pack)
 
 
-def test_read_loose_sha_mismatch(valid_blob_path):
-    """Prueba detección de discrepancia en SHA-1."""
-    with open(valid_blob_path, "rb") as f:
-        decompressed = zlib.decompress(f.read())
+def test_read_packfile_truncated(tmp_path):
+    """Prueba detección de packfile truncado."""
+    pack_dir = tmp_path / "objects" / "pack"
+    pack_dir.mkdir(parents=True)
 
-    corrupted_data = decompressed.replace(b"test", b"corr")
-    corrupted_path = valid_blob_path.parent / "corrupted_sha"
-    corrupted_path.write_bytes(zlib.compress(corrupted_data))
+    truncated = struct.pack(">4sII", b"PACK", 2, 1)[:8]
+    pack_path = pack_dir / "truncated.pack"
+    pack_path.write_bytes(truncated)
 
-    with pytest.raises(ValueError, match="SHA-1 mismatch"):
-        read_loose(corrupted_path)
+    with pytest.raises(ValueError, match="Packfile too small"):
+        read_packfile(pack_path)

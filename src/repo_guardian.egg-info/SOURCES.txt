@@ -1,5 +1,6 @@
 README.md
 pyproject.toml
+setup.py
 src/guardian/__init__.py
 src/guardian/cli.py
 src/guardian/dag_builder.py

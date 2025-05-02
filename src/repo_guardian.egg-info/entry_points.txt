@@ -1,2 +1,2 @@
 [console_scripts]
-guardian = guardian.cli:main
+guardian = guardian.cli:cli
