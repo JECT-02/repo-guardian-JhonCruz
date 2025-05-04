@@ -146,3 +146,18 @@ def _read_pack_entry(data: bytes, offset: int) -> Tuple[GitObject, int]:
     )
 
     return obj, crc_offset + 4
+
+def parse_commit_data(raw_data: bytes) -> dict:
+    """Extrae sha, padres y metadatos de un objeto commit."""
+    lines = raw_data.decode().splitlines()
+    parents = []
+    metadata = {}
+
+    for line in lines:
+        if line.startswith("parent "):
+            parents.append(line.split()[1])
+        elif " " in line:
+            key, value = line.split(" ", 1)
+            metadata[key] = value
+
+    return {"parents": parents, "metadata": metadata}

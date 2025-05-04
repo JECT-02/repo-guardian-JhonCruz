@@ -1,0 +1,12 @@
+#!/bin/bash
+set -euo pipefail
+
+OUTPUT="recovered_$(date +%Y%m%d).graphml"
+python -m guardian export-graph --output "$OUTPUT"
+
+if command -v gh &> /dev/null; then
+    gh release upload "$(git describe --tags)" "$OUTPUT" || \
+        echo "⚠️ Falló subida a GitHub (¿CLI 'gh' no configurado?)"
+else
+    echo "⚠️ GitHub CLI (gh) no instalado. No se subió el gráfico."
+fi
